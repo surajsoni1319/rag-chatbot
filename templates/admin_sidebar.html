@@ -1,0 +1,37 @@
+<aside class="sidebar">
+    <div class="logo">
+        <h2>🏢 Star Cement AI</h2>
+        <p class="admin-badge">Admin Panel</p>
+    </div>
+    <nav class="nav-menu">
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+            <span class="icon">📊</span> Dashboard
+        </a>
+        <a href="{{ url_for('admin_documents') }}" class="nav-item">
+            <span class="icon">📁</span> Documents
+        </a>
+        <a href="{{ url_for('admin_users') }}" class="nav-item">
+            <span class="icon">👥</span> Users
+        </a>
+        <a href="{{ url_for('admin_queries') }}" class="nav-item">
+            <span class="icon">❓</span> Unanswered Queries
+        </a>
+        <a href="{{ url_for('admin_feedback_review') }}" class="nav-item">
+            <span class="icon">💬</span> User Feedback
+        </a>
+        <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+            <span class="icon">📈</span> Analytics
+        </a>
+        <a href="{{ url_for('admin_upload') }}" class="nav-item upload-btn">
+            <span class="icon">⬆️</span> Upload Documents
+        </a>
+    </nav>
+    <div class="nav-footer">
+        <a href="{{ url_for('home') }}" class="nav-item">
+            <span class="icon">💬</span> Chat Interface
+        </a>
+        <a href="{{ url_for('logout') }}" class="nav-item logout">
+            <span class="icon">🚪</span> Logout
+        </a>
+    </div>
+</aside>

@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+
+# Environment variables
+.env
+
+# Database files
+*.db
+*.sqlite3
+
+# Uploads & vector storage
+uploads/
+vectorstore/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Extra files
+structure.txt
+build_method.txt

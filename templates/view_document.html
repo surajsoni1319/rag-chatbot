@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Document - {{ document.file_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+    <style>
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .document-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .document-header h2 {
+            margin: 0 0 20px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .doc-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .meta-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 12px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .meta-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .meta-value {
+            font-size: 1.05em;
+            font-weight: 600;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background: #2980b9;
+            transform: translateX(-3px);
+        }
+
+        .chunks-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+        }
+
+        .chunks-header {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chunks-header h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 22px;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .chunks-list {
+            padding: 20px;
+        }
+
+        .chunk {
+            margin-bottom: 25px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            overflow: hidden;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .chunk:hover {
+            border-color: #3498db;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+        }
+
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .chunk-number {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .chunk-id {
+            font-size: 13px;
+            color: #999;
+            font-family: 'Courier New', monospace;
+        }
+
+        .chunk-content {
+            padding: 20px;
+            line-height: 1.8;
+            color: #2c3e50;
+            font-size: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .chunk-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chunk-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chunk-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .chunk-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* Pagination Controls */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .pagination-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            color: #2c3e50;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-input {
+            width: 60px;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="{{ url_for('admin_documents') }}" class="back-button">
+            ← Back to Documents
+        </a>
+
+        <div class="document-header">
+            <h2>📄 {{ document.file_name }}</h2>
+
+            <div class="doc-meta">
+                <div class="meta-item">
+                    <div class="meta-label">Department</div>
+                    <div class="meta-value">{{ document.department|upper }}</div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">Access Level</div>
+                    <div class="meta-value">
+                        <span class="badge badge-info">{{ document.access_level }}</span>
+                    </div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">File Type</div>
+                    <div class="meta-value">{{ document.file_type|upper }}</div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">Cross-Department</div>
+                    <div class="meta-value">
+                        {% if document.is_cross_dept %}
+                        <span class="badge badge-success">Yes</span>
+                        {% else %}
+                        <span class="badge badge-warning">No</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">Total Chunks</div>
+                    <div class="meta-value">{{ document.chunk_count }}</div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">Uploaded By</div>
+                    <div class="meta-value">{{ document.uploaded_by_name }}</div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">Upload Date</div>
+                    <div class="meta-value">{{ document.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+
+                <div class="meta-item">
+                    <div class="meta-label">File Hash</div>
+                    <div class="meta-value" style="font-family: monospace; font-size: 0.9em;">
+                        {{ document.file_hash }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chunks-container">
+            <div class="chunks-header">
+                <h3>Document Chunks</h3>
+                <div class="pagination-info">
+                    Showing <span id="currentRange"></span> of {{ chunks|length }} chunks
+                </div>
+            </div>
+
+            <div class="chunks-list" id="chunksList">
+                {% if chunks %}
+                {% for chunk in chunks %}
+                <div class="chunk" data-chunk="{{ loop.index }}">
+                    <div class="chunk-header">
+                        <span class="chunk-number">Chunk #{{ chunk.number }}</span>
+                        <span class="chunk-id">ID: {{ chunk.id }}</span>
+                    </div>
+                    <div class="chunk-content">{{ chunk.content }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>No Chunks Found</h3>
+                    <p>This document doesn't have any chunks yet.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if chunks|length > 5 %}
+            <div class="pagination-controls">
+                <button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">← Previous</button>
+                <span style="color: #666;">Page <input type="number" id="pageInput" class="page-input" value="1" min="1"
+                        max="{{ (chunks|length / 5)|round(0, 'ceil')|int }}" onchange="goToPage()"> of {{ (chunks|length
+                    / 5)|round(0, 'ceil')|int }}</span>
+                <button class="pagination-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Pagination
+        const chunksPerPage = 5;
+        const totalChunks = {{ chunks| length }};
+        const totalPages = Math.ceil(totalChunks / chunksPerPage);
+        let currentPage = 1;
+
+        function showPage(page) {
+            const chunks = document.querySelectorAll('.chunk');
+            const start = (page - 1) * chunksPerPage;
+            const end = start + chunksPerPage;
+
+            chunks.forEach((chunk, index) => {
+                if (index >= start && index < end) {
+                    chunk.style.display = 'block';
+                } else {
+                    chunk.style.display = 'none';
+                }
+            });
+
+            // Update pagination info
+            const rangeStart = start + 1;
+            const rangeEnd = Math.min(end, totalChunks);
+            document.getElementById('currentRange').textContent = `${rangeStart}-${rangeEnd}`;
+
+            // Update buttons
+            document.getElementById('prevBtn').disabled = page === 1;
+            document.getElementById('nextBtn').disabled = page === totalPages;
+
+            // Update page input
+            document.getElementById('pageInput').value = page;
+
+            // Scroll to top
+            document.querySelector('.chunks-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                showPage(currentPage);
+            }
+        }
+
+        function goToPage() {
+            const page = parseInt(document.getElementById('pageInput').value);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                showPage(currentPage);
+            } else {
+                document.getElementById('pageInput').value = currentPage;
+            }
+        }
+
+        // Initialize
+        if (totalChunks > chunksPerPage) {
+            showPage(1);
+        } else {
+            document.getElementById('currentRange').textContent = `1-${totalChunks}`;
+        }
+    </script>
+</body>
+
+</html>

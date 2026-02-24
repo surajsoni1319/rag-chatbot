@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Star Cement AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🏢 Star Cement AI</h2>
+                <p class="admin-badge">Admin Panel</p>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-item active">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="{{ url_for('admin_documents') }}" class="nav-item">
+                    <span class="icon">📁</span> Documents
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-item">
+                    <span class="icon">👥</span> Users
+                </a>
+                <a href="{{ url_for('admin_queries') }}" class="nav-item">
+                    <span class="icon">❓</span> Unanswered Queries
+                </a>
+                <a href="{{ url_for('admin_feedback_review') }}" class="nav-item">
+                    <span class="icon">💬</span> User Feedback
+                </a>
+                <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+                    <span class="icon">📈</span> Analytics
+                </a>
+                <a href="{{ url_for('admin_upload') }}" class="nav-item upload-btn">
+                    <span class="icon">⬆️</span> Upload Documents
+                </a>
+            </nav>
+
+            <div class="nav-footer">
+                <a href="{{ url_for('home') }}" class="nav-item">
+                    <span class="icon">💬</span> Chat Interface
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Dashboard Overview</h1>
+                    <p class="breadcrumb">Home / Dashboard</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-details">
+                            <span class="user-name">{{ current_user.name or current_user.email.split('@')[0] }}</span>
+                            <span class="user-role">{{ current_user.role|title }}</span>
+                        </div>
+                        <div class="user-avatar">{{ current_user.email[0]|upper }}</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-content">
+                        <h3>{{ stats.total_documents }}</h3>
+                        <p>Total Documents</p>
+                        <span class="stat-change">+{{ stats.new_docs_this_month }} this month</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3>{{ stats.total_users }}</h3>
+                        <p>Active Users</p>
+                        <span class="stat-change">{{ stats.active_today }} active today</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-content">
+                        <h3>{{ stats.total_chats }}</h3>
+                        <p>Total Queries</p>
+                        <span class="stat-change">{{ stats.chats_today }} today</span>
+                    </div>
+                </div>
+
+                <div class="stat-card alert">
+                    <div class="stat-icon">❓</div>
+                    <div class="stat-content">
+                        <h3>{{ stats.unanswered_queries }}</h3>
+                        <p>Unanswered Queries</p>
+                        <span class="stat-change">Needs attention</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Department Breakdown -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>📊 Department Overview</h2>
+                </div>
+                <div class="department-grid">
+                    {% for dept in departments %}
+                    <div class="dept-card">
+                        <h4>{{ dept.name|upper }}</h4>
+                        <div class="dept-stats">
+                            <div class="dept-stat">
+                                <span class="label">Documents</span>
+                                <span class="value">{{ dept.doc_count }}</span>
+                            </div>
+                            <div class="dept-stat">
+                                <span class="label">Users</span>
+                                <span class="value">{{ dept.user_count }}</span>
+                            </div>
+                            <div class="dept-stat">
+                                <span class="label">Queries</span>
+                                <span class="value">{{ dept.query_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>📌 Recent Activity</h2>
+                    <a href="#" class="view-all">View All →</a>
+                </div>
+                <div class="activity-list">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon {{ activity.type }}">
+                            {% if activity.type == 'upload' %}📤
+                            {% elif activity.type == 'query' %}💬
+                            {% elif activity.type == 'user' %}👤
+                            {% else %}⚡{% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-text">{{ activity.description }}</p>
+                            <span class="activity-time">{{ activity.timestamp }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="content-section">
+                <div class="section-header">
+                    <h2>⚡ Quick Actions</h2>
+                </div>
+                <div class="action-grid">
+                    <a href="{{ url_for('admin_upload') }}" class="action-card">
+                        <span class="action-icon">⬆️</span>
+                        <h4>Upload Documents</h4>
+                        <p>Add new documents to knowledge base</p>
+                    </a>
+                    <a href="{{ url_for('admin_users') }}?action=add" class="action-card">
+                        <span class="action-icon">➕</span>
+                        <h4>Add User</h4>
+                        <p>Create new user account</p>
+                    </a>
+                    <a href="{{ url_for('admin_queries') }}" class="action-card">
+                        <span class="action-icon">🔍</span>
+                        <h4>Review Queries</h4>
+                        <p>Check unanswered questions</p>
+                    </a>
+                    <a href="{{ url_for('admin_feedback_review') }}" class="action-card">
+                        <span class="action-icon">💡</span>
+                        <h4>User Feedback</h4>
+                        <p>Review user submissions</p>
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+
+</html>

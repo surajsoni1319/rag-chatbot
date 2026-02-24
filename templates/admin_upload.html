@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- ✅ BUG #14 FIX: CSRF token for fetch() requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Documents - Star Cement AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🏢 Star Cement AI</h2>
+                <p class="admin-badge">Admin Panel</p>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="{{ url_for('admin_documents') }}" class="nav-item">
+                    <span class="icon">📁</span> Documents
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-item">
+                    <span class="icon">👥</span> Users
+                </a>
+                <a href="{{ url_for('admin_queries') }}" class="nav-item">
+                    <span class="icon">❓</span> Unanswered Queries
+                </a>
+                <a href="{{ url_for('admin_feedback_review') }}" class="nav-item">
+                    <span class="icon">💬</span> User Feedback
+                </a>
+                <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+                    <span class="icon">📈</span> Analytics
+                </a>
+                <a href="{{ url_for('admin_upload') }}" class="nav-item upload-btn active">
+                    <span class="icon">⬆️</span> Upload Documents
+                </a>
+            </nav>
+
+            <div class="nav-footer">
+                <a href="{{ url_for('home') }}" class="nav-item">
+                    <span class="icon">💬</span> Chat Interface
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Upload Documents</h1>
+                    <p class="breadcrumb">Home / Upload</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-details">
+                            <span class="user-name">{{ current_user.name or current_user.email.split('@')[0] }}</span>
+                            <span class="user-role">{{ current_user.role|title }}</span>
+                        </div>
+                        <div class="user-avatar">{{ current_user.email[0]|upper }}</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Upload Form -->
+            <section class="content-section">
+                <div class="upload-container">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <!-- File Upload Area -->
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📤</div>
+                            <h3>Drag & Drop Files Here</h3>
+                            <p>or click to browse</p>
+                            <input type="file" id="fileInput" name="files" multiple accept=".pdf,.docx,.txt,.xlsx"
+                                hidden>
+                            <button type="button" class="btn-secondary"
+                                onclick="document.getElementById('fileInput').click()">
+                                Choose Files
+                            </button>
+                            <p class="upload-hint">Supported formats: PDF, DOCX, TXT, XLSX (max 50MB per file)</p>
+                        </div>
+
+                        <!-- Selected Files List -->
+                        <div id="filesList" class="files-list" style="display: none;">
+                            <h4>Selected Files:</h4>
+                            <div id="filesContainer"></div>
+                        </div>
+
+                        <!-- Access Control Settings -->
+                        <div class="settings-section">
+                            <h3>📋 Access Control Settings</h3>
+
+                            <div class="form-group">
+                                <label for="department">Department <span class="required">*</span></label>
+                                <select id="department" name="department" required>
+                                    <option value="">Select Department</option>
+                                    <option value="it">IT</option>
+                                    <option value="hr">HR</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="operations">Operations</option>
+                                    <option value="sales">Sales</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                                <small>Department that owns this document</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="accessLevel">Access Level <span class="required">*</span></label>
+                                <select id="accessLevel" name="access_level" required>
+                                    <option value="public">🌐 Public - All employees</option>
+                                    <option value="employee">👤 Employee - Regular staff</option>
+                                    <option value="manager">👔 Manager - Management level</option>
+                                    <option value="senior_mgmt">🎯 Senior Management - GM, SGM, HOD</option>
+                                    <option value="executive">⭐ Executive - CXO level only</option>
+                                </select>
+                                <small>Who can access this document</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="crossDept" name="is_cross_dept">
+                                    <span>🔗 Make available to all departments</span>
+                                </label>
+                                <small>Enable if this document should be accessible across departments (e.g., company
+                                    policies)</small>
+                            </div>
+                        </div>
+
+                        <!-- Upload Button -->
+                        <div class="upload-actions">
+                            <button type="button" class="btn-secondary" onclick="resetForm()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn-primary" id="uploadBtn" disabled>
+                                ⬆️ Upload & Process
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Section -->
+                    <div id="progressSection" class="progress-section" style="display: none;">
+                        <h4>📊 Upload Progress</h4>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p id="progressText">Preparing upload...</p>
+                        <div id="uploadResults" class="upload-results"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Info Cards -->
+            <section class="info-grid">
+                <div class="info-card">
+                    <h4>📄 Supported Formats</h4>
+                    <ul>
+                        <li>PDF documents (.pdf)</li>
+                        <li>Word documents (.docx)</li>
+                        <li>Text files (.txt)</li>
+                        <li>Excel files (.xlsx)</li>
+                        <li>Max 50MB per file</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4>🔒 Access Levels</h4>
+                    <ul>
+                        <li><strong>Public:</strong> All employees</li>
+                        <li><strong>Employee:</strong> Regular staff & above</li>
+                        <li><strong>Manager:</strong> Management & above</li>
+                        <li><strong>Senior:</strong> Senior mgmt & above</li>
+                        <li><strong>Executive:</strong> CXO level only</li>
+                    </ul>
+                </div>
+                <div class="info-card">
+                    <h4>⚡ Processing</h4>
+                    <ul>
+                        <li>Files are split into chunks</li>
+                        <li>AI embeddings are generated</li>
+                        <li>Stored in vector database</li>
+                        <li>Instantly searchable</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='admin.js') }}"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const filesList = document.getElementById('filesList');
+        const filesContainer = document.getElementById('filesContainer');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadForm = document.getElementById('uploadForm');
+
+        let selectedFiles = [];
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || e.target.closest('.upload-icon, h3, p')) {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFiles();
+            uploadBtn.disabled = selectedFiles.length === 0;
+        }
+
+        function displayFiles() {
+            filesContainer.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span class="file-icon">📄</span>
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${(file.size / 1024).toFixed(2)} KB</span>
+                    <button type="button" class="remove-file" onclick="removeFile(${index})">✕</button>
+                `;
+                filesContainer.appendChild(fileItem);
+            });
+            filesList.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles();
+            uploadBtn.disabled = selectedFiles.length === 0;
+        }
+
+        function resetForm() {
+            selectedFiles = [];
+            uploadForm.reset();
+            displayFiles();
+            uploadBtn.disabled = true;
+            document.getElementById('progressSection').style.display = 'none';
+        }
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const department = document.getElementById('department').value;
+            const accessLevel = document.getElementById('accessLevel').value;
+            const crossDept = document.getElementById('crossDept').checked;
+
+            if (!department || !accessLevel) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            formData.append('department', department);
+            formData.append('access_level', accessLevel);
+            formData.append('is_cross_dept', crossDept);
+
+            // Show progress
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('progressText').textContent = 'Uploading files...';
+            uploadBtn.disabled = true;
+
+            // ✅ BUG #14 FIX: Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('progressFill').style.width = '100%';
+                    document.getElementById('progressText').textContent = '✅ Upload successful!';
+                    document.getElementById('uploadResults').innerHTML = `
+                        <div class="success-message">
+                            <h4>✅ Successfully uploaded!</h4>
+                            <p>${data.message}</p>
+                            ${data.details ? `
+                                <ul>
+                                    <li>Files: ${data.details.files.join(', ')}</li>
+                                    <li>Chunks created: ${data.details.chunks}</li>
+                                    <li>Vectors stored: ${data.details.vectors}</li>
+                                </ul>
+                            ` : ''}
+                        </div>
+                    `;
+
+                    // Reset form after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/admin/documents';
+                    }, 3000);
+                } else {
+                    throw new Error(data.message || 'Upload failed');
+                }
+            } catch (error) {
+                document.getElementById('progressText').textContent = '❌ Upload failed';
+                document.getElementById('uploadResults').innerHTML = `
+                    <div class="error-message">
+                        <h4>❌ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                uploadBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

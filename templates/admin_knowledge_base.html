@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- ✅ BUG #14 FIX: CSRF token for fetch() requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Base (Secondary) - Star Cement AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>🏢 Star Cement AI</h2>
+                <p class="admin-badge">Admin Panel</p>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="{{ url_for('admin_documents') }}" class="nav-item">
+                    <span class="icon">📁</span> Documents
+                </a>
+                <a href="{{ url_for('admin_knowledge_base') }}" class="nav-item active">
+                    <span class="icon">💡</span> Knowledge Base
+                </a>
+                <a href="{{ url_for('admin_users') }}" class="nav-item">
+                    <span class="icon">👥</span> Users
+                </a>
+                <a href="{{ url_for('admin_queries') }}" class="nav-item">
+                    <span class="icon">❓</span> Unanswered Queries
+                </a>
+                <a href="{{ url_for('admin_feedback_review') }}" class="nav-item">
+                    <span class="icon">💬</span> User Feedback
+                </a>
+                <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+                    <span class="icon">📈</span> Analytics
+                </a>
+                <a href="{{ url_for('admin_upload') }}" class="nav-item upload-btn">
+                    <span class="icon">⬆️</span> Upload Documents
+                </a>
+            </nav>
+
+            <div class="nav-footer">
+                <a href="{{ url_for('home') }}" class="nav-item">
+                    <span class="icon">💬</span> Chat Interface
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-item logout">
+                    <span class="icon">🚪</span> Logout
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1>Knowledge Base (Secondary)</h1>
+                    <p class="breadcrumb">Home / Knowledge Base</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <div class="user-details">
+                            <span class="user-name">{{ current_user.name or current_user.email.split('@')[0] }}</span>
+                            <span class="user-role">{{ current_user.role|title }}</span>
+                        </div>
+                        <div class="user-avatar">{{ current_user.email[0]|upper }}</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Filters & Search -->
+            <section class="filters-section">
+                <div class="search-box">
+                    <input type="text" id="searchDocs" placeholder="🔍 Search documents...">
+                </div>
+                <div class="filter-group">
+                    <select id="filterDept">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept }}">{{ dept|upper }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="filterAccess">
+                        <option value="">All Access Levels</option>
+                        <option value="public">Public</option>
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                        <option value="senior_mgmt">Senior Management</option>
+                        <option value="executive">Executive</option>
+                    </select>
+                    <select id="filterType">
+                        <option value="">All Types</option>
+                        <option value="pdf">PDF</option>
+                        <option value="docx">DOCX</option>
+                        <option value="txt">TXT</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Documents Table -->
+            <section class="content-section">
+                <div style="background: #dcfce7; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #15803d; font-size: 14px;">
+                        💡 <strong>Knowledge Base (Secondary):</strong> User-contributed content approved by
+                        administrators. For admin-uploaded documents, see <a href="{{ url_for('admin_documents') }}"
+                            style="color: #15803d; text-decoration: underline;">Primary Documents</a>.
+                    </p>
+                </div>
+                <div class="section-header">
+                    <h2>💡 Knowledge Base Entries ({{ documents|length }})</h2>
+                    <a href="{{ url_for('admin_feedback_review') }}" class="btn-primary">
+                        💬 Review Feedback
+                    </a>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Department</th>
+                                <th>Access Level</th>
+                                <th>Source</th>
+                                <th>Chunks</th>
+                                <th>Uploaded By</th>
+                                <th>Upload Date</th>
+                                <th>Cross-Dept</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsTable">
+                            {% for doc in documents %}
+                            <tr data-dept="{{ doc.department }}" data-access="{{ doc.access_level }}"
+                                data-type="{{ doc.file_type }}">
+                                <td>
+                                    <div class="file-info">
+                                        <span class="file-icon">💡</span>
+                                        <span class="file-name">{{ doc.file_name }}</span>
+                                    </div>
+                                </td>
+                                <td><span class="badge dept-badge">{{ doc.department|upper }}</span></td>
+                                <td><span class="badge access-badge {{ doc.access_level }}">{{ doc.access_level|title
+                                        }}</span></td>
+                                <td><span class="badge" style="background: #dcfce7; color: #15803d;">FEEDBACK</span>
+                                </td>
+                                <td>{{ doc.chunk_count }}</td>
+                                <td>{{ doc.uploaded_by_name }}</td>
+                                <td>{{ doc.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if doc.is_cross_dept %}
+                                    <span class="badge cross-dept">✓ Yes</span>
+                                    {% else %}
+                                    <span class="badge">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon" onclick="viewDocument({{ doc.id }})"
+                                            title="View">👁️</button>
+                                        <button class="btn-icon danger"
+                                            onclick="deleteDocument({{ doc.id }}, '{{ doc.file_name }}')"
+                                            title="Delete">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>⚠️ Confirm Delete</h3>
+            <p>Are you sure you want to delete <strong id="deleteFileName"></strong>?</p>
+            <p class="warning-text">This will remove all associated chunks and cannot be undone.</p>
+            <div class="modal-buttons">
+                <button onclick="closeDeleteModal()" class="btn-secondary">Cancel</button>
+                <button onclick="confirmDelete()" class="btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='admin.js') }}"></script>
+    <script>
+        let deleteDocId = null;
+
+        // Search functionality
+        document.getElementById('searchDocs').addEventListener('input', filterDocuments);
+        document.getElementById('filterDept').addEventListener('change', filterDocuments);
+        document.getElementById('filterAccess').addEventListener('change', filterDocuments);
+        document.getElementById('filterType').addEventListener('change', filterDocuments);
+
+        function filterDocuments() {
+            const searchTerm = document.getElementById('searchDocs').value.toLowerCase();
+            const deptFilter = document.getElementById('filterDept').value;
+            const accessFilter = document.getElementById('filterAccess').value;
+            const typeFilter = document.getElementById('filterType').value;
+
+            const rows = document.querySelectorAll('#documentsTable tr');
+
+            rows.forEach(row => {
+                const fileName = row.querySelector('.file-name').textContent.toLowerCase();
+                const dept = row.dataset.dept;
+                const access = row.dataset.access;
+                const type = row.dataset.type;
+
+                const matchesSearch = fileName.includes(searchTerm);
+                const matchesDept = !deptFilter || dept === deptFilter;
+                const matchesAccess = !accessFilter || access === accessFilter;
+                const matchesType = !typeFilter || type === typeFilter;
+
+                if (matchesSearch && matchesDept && matchesAccess && matchesType) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function viewDocument(docId) {
+            window.location.href = `/admin/documents/${docId}/view`;
+        }
+
+        function deleteDocument(docId, fileName) {
+            deleteDocId = docId;
+            document.getElementById('deleteFileName').textContent = fileName;
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteDocId = null;
+        }
+
+        function confirmDelete() {
+            if (deleteDocId) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch(`/admin/documents/${deleteDocId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error deleting document: ' + error);
+                    });
+            }
+            closeDeleteModal();
+        }
+
+        // Close modal on outside click
+        window.onclick = function (event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
+            }
+        }
+    </script>
+</body>
+
+</html>
