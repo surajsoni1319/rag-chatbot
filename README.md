@@ -10,6 +10,7 @@ Built with Flask • OpenAI • PostgreSQL (pgvector)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Embeddings-green)
 ![Alembic](https://img.shields.io/badge/Alembic-Migrations-orange)
 ![Status](https://img.shields.io/badge/Status-Production--Ready-brightgreen)
+
 🧠 Overview
 
 A production-grade Retrieval-Augmented Generation (RAG) chatbot built using Flask and PostgreSQL (pgvector), integrating OpenAI embeddings for semantic search.
